@@ -127,3 +127,14 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+video/*
+!video/.gitkeep
+
+video_edited/*
+!video_edited/.gitkeep
+
+video_editor/data/*
+!video_editor/data.gitkeep
+
+video_editor/trained_models/.DS_Store
