@@ -16,12 +16,14 @@ class Analyzer(object):
 
         if (os.path.exists(video_path) and os.path.isfile(video_path)):
             self.reportName = os.path.basename(video_path)
-            self.reportFile = os.path.abspath(os.path.join(cwd, "data/self.reportName.pkl"))
+            self.reportFile = os.path.abspath(os.path.join(cwd, "data/{}.pkl".format(self.reportName)))
             if (os.path.exists(self.reportFile)):
                 fileR = open(self.reportFile, "rb")
                 self.reports = pickle.load(fileR)
+                print("report {} with length({}) loaded".format(self.reportName,len(self.reports)))
             else:
                 self.reports = []
+                print("empty reports initialized")
         else:
             raise ValueError(
                 "{} doesn't exist or is Not a file".format(video_path))
@@ -45,59 +47,71 @@ class Analyzer(object):
         self._predictor = dlib.shape_predictor(model_path)
         # TODO:  detection via CNN if in enhanced mode
 
-
-
     def __del__(self):
-        # stablize 
+        # dump analyzed report to file 
         fileW = open(self.reportFile, "wb")
         pickle.dump(self.reports, fileW)
         self._cap.release()
 
-    def trackEye(self, frameNo=0):
+    def _detectEyes(self, frame):
+        # initilize the bounding box of both eyes
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        rects = self._face_detector(gray, 0)
+        if(len(rects)>0):
+            rect = rects[0]  # Assume only one face
+            shape = self._predictor(gray, rect)
+            coords = face_utils.shape_to_np(shape)
+            leftEyeBB = cv2.boundingRect(coords[42:48,])
+            rightEyeBB = cv2.boundingRect(coords[36:42,])
+            return True, leftEyeBB, rightEyeBB
+        else:
+            return False, None, None
+        
+    def trackEye(self, frameNo=0, stopOnTracked = False):
         """
         track eye from certain frame
         """
         grabed, frame, report = self.retrieve(frameNo)
         if report:
             (frameNo, leftEyeBB, rightEyeBB, confid) = report
+            print("init trackers with frame({}) grabed({}) with tracked({}) result Bounding Box".format(frameNo, grabed, confid))
         else:
-            # initilize the bounding box of both eyes
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            rects = self._face_detector(gray, 0)
-            rect = rects[0]  # Assume only one face
-            shape = self._predictor(gray, rect)
-            coords = face_utils.shape_to_np(shape)
-            leftEyeBB = cv2.boundingRect(coords[42:48,])
-            rightEyeBB = cv2.boundingRect(coords[36:42,])
-            print(leftEyeBB)
+            #TODO: treat detection failure
+            (detected, leftEyeBB, rightEyeBB) = self._detectEyes(frame)
+            print("init trackers with frame({}) grabed({}) with detected({}) result Bounding Box".format(frameNo, grabed, detected))
 
         self.leftEyeTracker.init(frame, leftEyeBB)
         self.rightEyeTracker.init(frame, rightEyeBB)
 
         while grabed:
             # TODO: calculate confidence level more complex way
-            confid = True
-            # grab the bounding box coordinates of the object
-            (success, leftEyeBB) = self.leftEyeTracker.update(frame)
-            confid = success and confid
-            leftEyeBB = leftEyeBB
-            # check to see if the tracking was a success
-            # if success:
-            #     (x, y, w, h) = [int(v) for v in leftEyeBB]
-            #     report.leftEyeBB = (x, y, w, h)
+            if report:
+                (frameNo, leftEyeBB, rightEyeBB, confid) = report
+                if(stopOnTracked and confid):
+                    break
+            else:
+                confid = True
+                # grab the bounding box coordinates of the object
+                (tracked, leftEyeBB) = self.leftEyeTracker.update(frame)
+                confid = tracked and confid
+                leftEyeBB = leftEyeBB
+                # check to see if the tracking was a success
+                # if success:
+                #     (x, y, w, h) = [int(v) for v in leftEyeBB]
+                #     report.leftEyeBB = (x, y, w, h)
 
-            (success, rightEyeBB) = self.rightEyeTracker.update(frame)
-            confid = success and confid
-            rightEyeBB = rightEyeBB
-            # if success:
-            #     (x, y, w, h) = [int(v) for v in rightEyeBB]
-            #     report.rightEyeBB = (x, y, w, h)
-
-            self.archive((frameNo, leftEyeBB, rightEyeBB, confid))
+                (tracked, rightEyeBB) = self.rightEyeTracker.update(frame)
+                confid = tracked and confid
+                rightEyeBB = rightEyeBB
+                # if success:
+                #     (x, y, w, h) = [int(v) for v in rightEyeBB]
+                #     report.rightEyeBB = (x, y, w, h)
+                if(not confid):
+                    (detected, leftEyeBB, rightEyeBB) = self._detectEyes(frame)
+                    confid = detected and confid
+                self.archive((frameNo, leftEyeBB, rightEyeBB, confid))
 
             frameNo += 1
-            # print("Frame{} grabed".format(frameNo))
-
             grabed, frame, report = self.retrieve(frameNo)
 
     def retrieve(self, frameNo=0):
@@ -109,9 +123,10 @@ class Analyzer(object):
         report = None
         if (frameNo < self._fno):
             # support rewind case
+            print("retrieve rewinded: current frameNo={} and request frameNo={}".format(self._fno,frameNo))
             #TODO: rewind to nearest cached frame/thumbnail
             self._fno = 0
-        # grabed = self._cap.grab()
+            
         # skip to frame to track without decoding
         while frameNo >= self._fno and grabed:
             self._fno += 1
@@ -120,7 +135,7 @@ class Analyzer(object):
             #     self._fno, frameNo))
         if (grabed):
             retrieved, img = self._cap.retrieve()
-            # print("Frame{} retrieved={}".format(self._fno,retrieved))
+            print("Frame({}) retrieved={}".format(self._fno,retrieved))
             frame = imutils.resize(img, self.resizeWidth)
             self.frame = frame
         # retrive the report

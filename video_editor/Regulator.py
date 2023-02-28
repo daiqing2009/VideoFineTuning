@@ -16,28 +16,30 @@ class Regulator(object):
         #TODO: enhance: retrieve full report for review 
         frameNo = 0
         #FIXME: always return false in retrieve
-        success, frame, report = analyzer.retrieve(frameNo)
-        print(frame)
+        grabed, frame, report = analyzer.retrieve(frameNo)
+        print("review frame({}) grabed=({})".format(frameNo, grabed))
         (H, W) = frame.shape[:2]
+        print("review on frame of size ({}*{})".format(H,W))
         (frameNo, leftEyeBB, rightEyeBB, confid ) = report
         fps = FPS().start()
 
-        while success:
+        while grabed:
             (frameNo, leftEyeBB, rightEyeBB, confid ) = report
             if confid:
+                print(leftEyeBB)
                 (x, y, w, h) = [int(v) for v in leftEyeBB]
                 cv2.rectangle(frame, (x, y), (x + w, y + h),
                             (0, 255, 0), 2)
                 (x, y, w, h) = [int(v) for v in rightEyeBB]
-                cv2.rectangle(frame, (x, y), (x + w, y + h),
-                            (0, 255, 0), 2)
+                # cv2.rectangle(frame, (x, y), (x + w, y + h),
+                #             (0, 255, 0), 2)
                 # update the FPS counter
                 fps.update()
                 fps.stop()
                 # initialize the set of information we'll be displaying on
                 # the frame
                 info = [
-                    ("Success", "Yes" if success else "No"),
+                    ("eyes identified", "Yes" if confid else "No"),
                     ("FPS", "{:.2f}".format(fps.fps())),
                 ]
                 # loop over the info tuples and draw them on our frame
@@ -48,6 +50,7 @@ class Regulator(object):
                 #TODO: mutate on review
                 #TODO: show muated frame in parrallel with original one
             else:
+                print("not tracked or detected")
                 # pause on error frame and rectify it than continue tracking
                 while True:
                     key = cv2.waitKey(0) & 0xFF
@@ -75,8 +78,8 @@ class Regulator(object):
                 analyzer.trackEye(frameNo)
             # show the output frame
             cv2.imshow("Frame", frame)
-            frame += 1
-            success, frame, report = analyzer.retrieve(frameNo)
+            frameNo += 1
+            grabed, frame, report = analyzer.retrieve(frameNo)
 
         cv2.destroyAllWindows()
         

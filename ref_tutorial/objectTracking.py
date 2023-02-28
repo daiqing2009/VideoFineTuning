@@ -35,8 +35,8 @@ initBB = None
 
 # Read video
 currentDir = os.path.dirname(__file__)
-fileToProcess = os.path.join(currentDir, 'clips/DemoEye1.mp4')
-fileToSave = os.path.join(currentDir, 'bluredClips/DemoEye2.mp4')
+fileToProcess = os.path.join(currentDir, '../video/DemoEye1.mp4')
+fileToSave = os.path.join(currentDir, '../video_edited/DemoEye1.mp4')
 
 # clip = VideoFileClip(fileToProcess)
 vs = cv2.VideoCapture(fileToProcess)
