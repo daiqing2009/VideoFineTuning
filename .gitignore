@@ -137,4 +137,4 @@ video_edited/*
 video_editor/data/*
 !video_editor/data.gitkeep
 
-video_editor/trained_models/.DS_Store
+**/.DS_Store

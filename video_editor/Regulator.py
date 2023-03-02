@@ -30,9 +30,10 @@ class Regulator(object):
                 (x, y, w, h) = [int(v) for v in leftEyeBB]
                 cv2.rectangle(frame, (x, y), (x + w, y + h),
                             (0, 255, 0), 2)
+                print(rightEyeBB)
                 (x, y, w, h) = [int(v) for v in rightEyeBB]
-                # cv2.rectangle(frame, (x, y), (x + w, y + h),
-                #             (0, 255, 0), 2)
+                cv2.rectangle(frame, (x, y), (x + w, y + h),
+                            (255, 0 , 0), 2)
                 # update the FPS counter
                 fps.update()
                 fps.stop()
@@ -57,27 +58,41 @@ class Regulator(object):
                     if key == ord("l"):
                         # select the bounding box of the object we want to track (make
                         # sure you press ENTER or SPACE after selecting the ROI)
-                        leftEyeBB = cv2.selectROI("leftEyeBB", frame, fromCenter=False,
+                        leftEyeBB = cv2.selectROI("Frame", frame, fromCenter=False,
                                             showCrosshair=True)
                     if key == ord("r"):
                         # select the bounding box of the object we want to track (make
                         # sure you press ENTER or SPACE after selecting the ROI)
-                        rightEyeBB = cv2.selectROI("rightEyeBB", frame, fromCenter=False,
+                        rightEyeBB = cv2.selectROI("Frame", frame, fromCenter=False,
                                             showCrosshair=True)
-                 
+                    
                     # if the `q` key was pressed, break from the loop
                     elif key == ord("q"):
                         break
-                (x, y, w, h) = [int(v) for v in leftEyeBB]
-                cv2.rectangle(frame, (x, y), (x + w, y + h),
-                            (0, 255, 0), 2)  
-                (x, y, w, h) = [int(v) for v in rightEyeBB]
-                cv2.rectangle(frame, (x, y), (x + w, y + h),
-                            (0, 255, 0), 2)                       
-                analyzer.archive((frameNo,leftEyeBB,rightEyeBB, True))      
-                analyzer.trackEye(frameNo)
+                    (x, y, w, h) = [int(v) for v in leftEyeBB]
+                    cv2.rectangle(frame, (x, y), (x + w, y + h),
+                                (0, 255, 0), 2)  
+                    (x, y, w, h) = [int(v) for v in rightEyeBB]
+                    cv2.rectangle(frame, (x, y), (x + w, y + h),
+                                (0, 255, 0), 2)                       
+                    analyzer.archive((frameNo,leftEyeBB,rightEyeBB, True))      
+                    analyzer.trackEye(frameNo)
+                
             # show the output frame
             cv2.imshow("Frame", frame)
+            key = cv2.waitKey(1) & 0xFF
+            # if the 's' key is selected, we are going to "select" a bounding
+            # box to track
+            if key == ord("s"):
+                # select the bounding box of the object we want to track (make
+                # sure you press ENTER or SPACE after selecting the ROI)
+                initBB = cv2.selectROI("Frame", frame, fromCenter=False,
+                                    showCrosshair=True)
+                print(initBB)
+                # fps = FPS().start()
+                # if the `q` key was pressed, break from the loop
+            elif key == ord("q"):
+                break
             frameNo += 1
             grabed, frame, report = analyzer.retrieve(frameNo)
 

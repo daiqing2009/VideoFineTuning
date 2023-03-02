@@ -125,7 +125,9 @@ class Analyzer(object):
             # support rewind case
             print("retrieve rewinded: current frameNo={} and request frameNo={}".format(self._fno,frameNo))
             #TODO: rewind to nearest cached frame/thumbnail
-            self._fno = 0
+            self._fno = frameNo
+            self._cap.set(cv2.CAP_PROP_POS_FRAMES, frameNo)
+
             
         # skip to frame to track without decoding
         while frameNo >= self._fno and grabed:
@@ -135,7 +137,7 @@ class Analyzer(object):
             #     self._fno, frameNo))
         if (grabed):
             retrieved, img = self._cap.retrieve()
-            print("Frame({}) retrieved={}".format(self._fno,retrieved))
+            # print("Frame({}) retrieved={}".format(self._fno,retrieved))
             frame = imutils.resize(img, self.resizeWidth)
             self.frame = frame
         # retrive the report

@@ -6,7 +6,7 @@ import os
 from video_editor import Analyzer,Mutator,Regulator
 
 cwd = os.path.abspath(os.path.dirname(__file__))
-fileToProcess = os.path.join(cwd, 'video/DemoEye1.mp4')
+fileToProcess = os.path.join(cwd, 'video/李SY自己产品.mp4')
 
 #TODO: process all videos under same folder
 analyzer = Analyzer(fileToProcess)
