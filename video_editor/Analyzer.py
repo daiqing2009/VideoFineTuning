@@ -94,7 +94,6 @@ class Analyzer(object):
                 # grab the bounding box coordinates of the object
                 (tracked, leftEyeBB) = self.leftEyeTracker.update(frame)
                 confid = tracked and confid
-                leftEyeBB = leftEyeBB
                 # check to see if the tracking was a success
                 # if success:
                 #     (x, y, w, h) = [int(v) for v in leftEyeBB]
@@ -102,7 +101,6 @@ class Analyzer(object):
 
                 (tracked, rightEyeBB) = self.rightEyeTracker.update(frame)
                 confid = tracked and confid
-                rightEyeBB = rightEyeBB
                 # if success:
                 #     (x, y, w, h) = [int(v) for v in rightEyeBB]
                 #     report.rightEyeBB = (x, y, w, h)
