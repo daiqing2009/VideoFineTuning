@@ -67,18 +67,18 @@ class Analyzer(object):
         else:
             return False, None, None
         
-    def trackEye(self, frameNo=0, stopOnTracked = False):
+    def trackEye(self, frameNo=0, stopOnUntrackable = True):
         """
         track eye from certain frame
         """
         grabed, frame, report = self.retrieve(frameNo)
         if report:
             (frameNo, leftEyeBB, rightEyeBB, confid) = report
-            print("init trackers with frame({}) grabed({}) with tracked({}) result Bounding Box".format(frameNo, grabed, confid))
+            print("init trackers with frame({}) grabed({}) with tracked({}) Bounding Box".format(frameNo, grabed, confid))
         else:
-            #TODO: treat detection failure
+            #FIXME: treat detection failure
             (detected, leftEyeBB, rightEyeBB) = self._detectEyes(frame)
-            print("init trackers with frame({}) grabed({}) with detected({}) result Bounding Box".format(frameNo, grabed, detected))
+            print("init trackers with frame({}) grabed({}) with detected({}) Bounding Box".format(frameNo, grabed, detected))
 
         self.leftEyeTracker.init(frame, leftEyeBB)
         self.rightEyeTracker.init(frame, rightEyeBB)
@@ -87,28 +87,20 @@ class Analyzer(object):
             # TODO: calculate confidence level more complex way
             if report:
                 (frameNo, leftEyeBB, rightEyeBB, confid) = report
-                if(stopOnTracked and confid):
-                    break
             else:
                 confid = True
                 # grab the bounding box coordinates of the object
                 (tracked, leftEyeBB) = self.leftEyeTracker.update(frame)
                 confid = tracked and confid
-                # check to see if the tracking was a success
-                # if success:
-                #     (x, y, w, h) = [int(v) for v in leftEyeBB]
-                #     report.leftEyeBB = (x, y, w, h)
-
                 (tracked, rightEyeBB) = self.rightEyeTracker.update(frame)
                 confid = tracked and confid
-                # if success:
-                #     (x, y, w, h) = [int(v) for v in rightEyeBB]
-                #     report.rightEyeBB = (x, y, w, h)
                 if(not confid):
                     (detected, leftEyeBB, rightEyeBB) = self._detectEyes(frame)
                     confid = detected and confid
                 self.archive((frameNo, leftEyeBB, rightEyeBB, confid))
 
+            if(stopOnUntrackable and (not confid)):
+                break    
             frameNo += 1
             grabed, frame, report = self.retrieve(frameNo)
 
@@ -122,7 +114,6 @@ class Analyzer(object):
         if (frameNo < self._fno):
             # support rewind case
             print("retrieve rewinded: current frameNo={} and request frameNo={}".format(self._fno,frameNo))
-            #TODO: rewind to nearest cached frame/thumbnail
             self._fno = frameNo
             self._cap.set(cv2.CAP_PROP_POS_FRAMES, frameNo)
 
@@ -148,7 +139,7 @@ class Analyzer(object):
         """
         set the report rectified by report
         """
-        (frameNo, initLeftEyeBB, initRightEyeBB, confid) = report
+        (frameNo, leftEyeBB, rightEyeBB, confid) = report
         len_report = len(self.reports)
         # length check if reports already processed certain frame
         if (frameNo == len_report):
